@@ -1,2 +1,28 @@
-train_file: "C:/Users/nandha/Desktop/LID/trainInput.txt"
-train_dir: "C:/Users/nandha/Desktop/LID/"
+trainFile: "D:/AIH/LID-master/trainInput.txt"
+trainDir: "D:/AIH/LID-master/Train/"
+testFile: "D:/AIH/LID-master/testInput.txt"
+testDir: "D:/AIH/LID-master/Test/"
+
+batchSize: 5
+valBatchSize: 3
+numWorkers: 4
+
+inShape: [1,129,500]
+outClasses: 5
+labelNames: ['HIN','MAR','TEL','TAM','GUJ']
+rnnHiddenSize: 256
+rnnLayers: 2
+
+model: 'CRNN'
+optimizer: 'Adam'
+learningRate: 0.01
+iterations: 20
+
+segmentLength: 10
+samplesPerSec: 50
+
+train: 1
+modelLoc: 'D:/AIH/LID-master/Models/'
+test: 0
+
+runName: 'TrialRun'

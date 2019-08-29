@@ -1,13 +1,20 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Thu Aug 29 11:06:06 2019
+'''
+Main Wrapper to be called from the bash script
+It takes in all arguements from the config.yaml file and runs
+Train or Test or Predict with necessary preProcessing steps
 
-@author: nandha
-"""
+Saving only weights after training
+Testing saves the various metrics as np array
+
+Need to write new code for prediction later on
+'''
 import argparse
 import yaml
-
-from train import trainModel
+import CRNN
+import train
+import test
+import torch
+import numpy as np
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -19,4 +26,17 @@ if __name__ == "__main__":
         except yaml.YAMLError as exc:
             print(exc)
     
-    print(config)
+    
+    if config['train']:
+        model, lossHist = train.trainModel(config)
+        torch.save(model.state_dict, config['modelLoc'] + config['runName'] +
+                   "Weights.pth")
+        
+        #Saves only weights (need to create model object and load this)
+        #torch.save(model, config['modelLoc'] + config['runName'] + "Full.pth")
+        #Saves entire Model (not advised, can break lot of ways due to directory issue)
+
+    if config['test']:
+        metrics = test.testModel(config)
+        np.save(config['modelLoc'] + config['runName'] + "Acc.npy",metrics)
+        

@@ -1,5 +1,5 @@
 '''
-Building the basic CRNN network
+Basic CRNN network
 Input: Spectrogram Image ( dim )
 Output: Probabilities ( 6 x 1 )
 
@@ -9,15 +9,11 @@ crnn = CRNN(inshape,outClasses,rnnHiddenSize,rnnLayers)
 crnn = crrn.cuda()
 loss = nn.NLLLoss()  #If we output without softmax in model, then CrossEntropyLoss. Can softmax later for probabilites.
 optimizer = optim.Adam(crnn.parameters(),lr=0.01) #Need to Tune
-
 '''
-
-import torch
 import torch.nn as nn
-import torch.optim as optim
 
 class CRNN(nn.Module):
-    def __init__(self, inShape = (3,129,500), outClasses=5, rnnHiddenSize = 256, rnnLayers=2):
+    def __init__(self, config):
         
         # inshape = (vertical/FreqAxis,horiz/TimeAxis,channels)
         
@@ -31,7 +27,7 @@ class CRNN(nn.Module):
         cnn = nn.Sequential()
 
         def convRelu(i, batchNorm=True, leakyRelu = False, maxPool = True):
-            channelPrev = inShape[0] if i == 0 else filters[i - 1]
+            channelPrev = config['inShape'][0] if i == 0 else filters[i - 1]
             channelNext = filters[i]
             cnn.add_module('conv{0}'.format(i),
                            nn.Conv2d(channelPrev, channelNext,
@@ -57,10 +53,12 @@ class CRNN(nn.Module):
         convRelu(6)
 
         self.cnn = cnn
-        self.rnn = nn.LSTM(filters[-1],rnnHiddenSize,
-                        rnnLayers, batch_first = True, bidirectional=True)
+        self.rnn = nn.LSTM(filters[-1],config['rnnHiddenSize'],
+                        config['rnnLayers'], batch_first = True, 
+                        bidirectional=True)
         
-        self.fc = nn.Linear(rnnHiddenSize*rnnLayers,outClasses)
+        self.fc = nn.Linear(config['rnnHiddenSize']*config['rnnLayers'],
+                            config['outClasses'])
 
     def forward(self, input):
         

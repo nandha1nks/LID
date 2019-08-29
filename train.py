@@ -16,40 +16,45 @@ import torch.optim as optim
 
 import numpy as np
 import cv2
+
+import dataLoader
 import CRNN
+device = torch.device("cuda")
 
-def trainModel(trainLoader, model = 'CRNN', opti = 'Adam', learningRate = 0.01,
-               iterations = 20, location = 'D:/AI Hack CDAC/', batchSize = 64,
-               inShape = (3,129,500), outClasses = 5, rnnHiddenSize = 256,
-               rnnLayers = 2):
+def trainModel(trainLoader, config):
+    trainLoader = dataLoader.dataloaders(config, True)
 
-    if model == 'CRNN':
-        crnn = CRNN.CRNN(inShape,outClasses,rnnHiddenSize,rnnLayers)
-        crnn = crnn.cuda()
+    if config['model'] == 'CRNN':
+        model = CRNN.CRNN(config)
+    model.to(device)
     
     loss = nn.NLLLoss()  #If we output without softmax in model, then CrossEntropyLoss. Can softmax later for probabilites.
+    learningRate = config['learningRate']
+    opti = config['optimizer']
     if opti == 'Adam':    
-        optimizer = optim.Adam(crnn.parameters(),lr=learningRate) #Need to Tune
+        optimizer = optim.Adam(model.parameters(),lr=learningRate) #Need to Tune
     elif opti == 'Momentum':
-        optimizer = optim.Adam(crnn.parameters(),lr=learningRate,momentum = 0.9)
+        optimizer = optim.Adam(model.parameters(),lr=learningRate,momentum = 0.9)
     elif opti == 'Adagrad':
-        optimizer = optim.Adagrad(crnn.parameters(),lr=learningRate)
+        optimizer = optim.Adagrad(model.parameters(),lr=learningRate)
     elif opti == 'RMSProp':
-        optimizer = optim.RMSprop(crnn.parameters(),lr=learningRate,momentum = 0.9)
+        optimizer = optim.RMSprop(model.parameters(),lr=learningRate,momentum = 0.9)
         
     lossHistory = []
     runningLoss = 0
-    for epoch in range(1,iterations+1):
-        crnn.train(True)
+    print('Training Begins')
+    for epoch in range(1,config['iterations']+1):
+        model.train(True)
         for data in trainLoader:
         
-            fileNos,labels = data[0].to(device),data[1].to(device)
+            fileNos,labels = data
             labels = labels.tolist()
-            images = torch.FloatTensor(batchSize,inShape[0],inShape[1],inShape[2])
+            images = torch.FloatTensor(config['batchSize'], config['inShape'][0],
+                                       config['inShape'][1], config['inShape'][2])
             i = -1
             for file in fileNos:
                 i += 1
-                fileName = location+'Train/'+str(file)+'.png'
+                fileName = config['trainDir']+str(file)+'.png'
                 img = cv2.imread(fileName)
                 if img is not None:
                     img = torch.from_numpy(img)
@@ -59,9 +64,11 @@ def trainModel(trainLoader, model = 'CRNN', opti = 'Adam', learningRate = 0.01,
                     fileNos.pop(i)
                     i -= 1
             torch.from_numpy(np.array(labels))
+            images.to(device)
+            labels.to(device)
             
             optimizer.zero_grad()
-            probabilities = crnn(images)
+            probabilities = model(images)
             losses = loss(labels,probabilities)
             losses.backward()
             optimizer.step()
@@ -71,5 +78,5 @@ def trainModel(trainLoader, model = 'CRNN', opti = 'Adam', learningRate = 0.01,
         if epoch % 4 == 0: 
             print('EpochNum: '+str(epoch)+' RunningLoss: '+str(runningLoss/4))
             runningLoss = 0
-    
-    return crnn, lossHistory
+    print('Training Ends')
+    return model, lossHistory
