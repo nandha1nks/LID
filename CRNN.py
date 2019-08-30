@@ -21,7 +21,7 @@ class CRNN(nn.Module):
         #assert imgH % 16 == 0, 'imgH has to be a multiple of 16' WHY??
 
         kerSize = [3, 3, 3, 3, 3, 3, 3]
-        pad = [1, 1, 1, 1, 1, 1, 0]
+        pad = [0, 0, 0, 0, 0, 0, 0]
         stride = [1, 1, 1, 1, 1, 1, 1]
         filters = [64, 128, 256, 256, 512, 512, 512]
         cnn = nn.Sequential()
@@ -59,18 +59,21 @@ class CRNN(nn.Module):
         
         self.fc = nn.Linear(config['rnnHiddenSize']*config['rnnLayers'],
                             config['outClasses'])
-
+        self.output = nn.LogSoftmax(0)
+        
     def forward(self, input):
         
         featureSet = self.cnn(input)
         batchSize, channels, height, timeSeq = featureSet.size()
-        
+        #print(featureSet.size())
         assert height == 1 # Need to verify if the height turns out to be 1 IMP
         featureSet = featureSet.squeeze(2)  # Remove height
         
         featureSet = featureSet.permute(2, 0, 1)  # [timeSeq, batchSize, channels]
-        out = self.rnn(featureSet) # [timeSeq, batchSize, rnnLayers*channels]
-        out = out.permute(1, 0, 2) # [batchSize, timeSeq, rnnLayers*channels]
+        out, _ = self.rnn(featureSet) # [timeSeq, batchSize, 2*rnnHiddenSize]
         
-        prob = nn.LogSoftmax(self.fc(out))
+        out = out[timeSeq-1,:,:] # [1, batchSize, 2*rnnHiddenSize]
+        # Taking only last time step output from RNN (as is in Literature)
+        out = out.squeeze(0) # [batchSize, 2*rnnHiddenSize]
+        prob = self.output(self.fc(out))
         return prob

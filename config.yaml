@@ -4,11 +4,12 @@ testFile: "D:/AIH/LID-master/testInput.txt"
 testDir: "D:/AIH/LID-master/Test/"
 
 batchSize: 5
-valBatchSize: 3
+valBatchSize: 8
 numWorkers: 4
 
-inShape: [1,129,500]
+inShape: [1,129,501]
 outClasses: 5
+labelNos: [0,1,2,3,4]
 labelNames: ['HIN','MAR','TEL','TAM','GUJ']
 rnnHiddenSize: 256
 rnnLayers: 2

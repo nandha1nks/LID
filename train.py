@@ -21,12 +21,12 @@ import dataLoader
 import CRNN
 device = torch.device("cuda")
 
-def trainModel(trainLoader, config):
-    trainLoader = dataLoader.dataloaders(config, True)
+def trainModel(config):
+    trainLoader = dataLoader.dataLoaders(config, True)
 
     if config['model'] == 'CRNN':
         model = CRNN.CRNN(config)
-    model.to(device)
+    model = model.to(device)
     
     loss = nn.NLLLoss()  #If we output without softmax in model, then CrossEntropyLoss. Can softmax later for probabilites.
     learningRate = config['learningRate']
@@ -42,41 +42,51 @@ def trainModel(trainLoader, config):
         
     lossHistory = []
     runningLoss = 0
-    print('Training Begins')
+    print('\n\nTraining Begins\n\n')
     for epoch in range(1,config['iterations']+1):
         model.train(True)
         for data in trainLoader:
         
             fileNos,labels = data
             labels = labels.tolist()
-            images = torch.FloatTensor(config['batchSize'], config['inShape'][0],
-                                       config['inShape'][1], config['inShape'][2])
-            i = -1
-            for file in fileNos:
-                i += 1
-                fileName = config['trainDir']+str(file)+'.png'
-                img = cv2.imread(fileName)
+            fileNos = fileNos.tolist()
+            imagesList = []
+            i = 0
+            while i < len(fileNos):
+                fileName = config['trainDir']+str(fileNos[i])+'.png'
+                img = cv2.imread(fileName,0)
                 if img is not None:
+                    img = np.reshape(img,(config['inShape'][1],config['inShape'][2],config['inShape'][0]))
                     img = torch.from_numpy(img)
-                    images[i] = img.permute(2,0,1)   # Channels, Height, Width
+                    imagesList.append(img.permute(2,0,1))  # Channels, Height, Width
+                    i += 1
                 else:
                     labels.pop(i)
                     fileNos.pop(i)
-                    i -= 1
-            torch.from_numpy(np.array(labels))
-            images.to(device)
-            labels.to(device)
+            images = torch.FloatTensor(len(imagesList), config['inShape'][0],
+                                       config['inShape'][1], config['inShape'][2])
+            for i in range(len(imagesList)):
+                images[i] = torch.from_numpy(np.array(imagesList[i]))
+            images = images.to(device)
+            
+            label = torch.LongTensor(len(labels))
+            i = -1
+            for l in labels:
+                i += 1
+                label[i] = torch.from_numpy(np.array(l))
+            labels = label.to(device)
             
             optimizer.zero_grad()
             probabilities = model(images)
-            losses = loss(labels,probabilities)
+            losses = loss(probabilities,labels)
             losses.backward()
             optimizer.step()
             
-            runningLoss += losses
-            lossHistory.append(losses)
+            runningLoss += losses.item()
+            lossHistory.append(losses.item())
         if epoch % 4 == 0: 
             print('EpochNum: '+str(epoch)+' RunningLoss: '+str(runningLoss/4))
             runningLoss = 0
-    print('Training Ends')
+            
+    print('\n\nTraining Ends\n\n')
     return model, lossHistory

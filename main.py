@@ -25,11 +25,10 @@ if __name__ == "__main__":
             config = yaml.safe_load(stream)
         except yaml.YAMLError as exc:
             print(exc)
-    
-    
+
     if config['train']:
         model, lossHist = train.trainModel(config)
-        torch.save(model.state_dict, config['modelLoc'] + config['runName'] +
+        torch.save(model.state_dict(), config['modelLoc'] + config['runName'] +
                    "Weights.pth")
         
         #Saves only weights (need to create model object and load this)
@@ -37,6 +36,9 @@ if __name__ == "__main__":
         #Saves entire Model (not advised, can break lot of ways due to directory issue)
 
     if config['test']:
-        metrics = test.testModel(config)
-        np.save(config['modelLoc'] + config['runName'] + "Acc.npy",metrics)
+        confMatrix, metrics = test.testModel(config)
+        np.save(config['modelLoc'] + config['runName'] + "Confusion.npy",confMatrix)
+        f = open(config['modelLoc'] + config['runName'] + "Metrics.txt",'w+')
+        f.write(metrics)
+        f.close()
         

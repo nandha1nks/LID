@@ -37,7 +37,7 @@ def dataLoaders(config, trainLoader = True):
         test = dataset(config['testFile'],False)
         testDataset = TensorDataset(test[0],test[1])    
         loader = DataLoader(testDataset, config['valBatchSize'],
-                                num_workers = ['numWorkers'], shuffle = False,
+                                num_workers = config['numWorkers'], shuffle = False,
                                 pin_memory = False)
     
     return loader
