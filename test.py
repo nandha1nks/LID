@@ -13,10 +13,13 @@ import cv2
 import numpy as np
 from sklearn import metrics
 
-device = torch.device("cuda")
-
 def testModel(config):
     testLoader = dataLoader.dataLoaders(config, False)
+    
+    if config['cuda'] == 1:
+        device = torch.device("cuda")
+    else:
+        device = torch.device("cpu")
     
     if config['model'] == 'CRNN':
         model = CRNN.CRNN(config)

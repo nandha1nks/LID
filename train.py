@@ -19,10 +19,15 @@ import cv2
 
 import dataLoader
 import CRNN
-device = torch.device("cuda")
+
 
 def trainModel(config):
     trainLoader = dataLoader.dataLoaders(config, True)
+    
+    if config['cuda'] == 1:
+        device = torch.device("cuda")
+    else:
+        device = torch.device("cpu")
 
     if config['model'] == 'CRNN':
         model = CRNN.CRNN(config)
