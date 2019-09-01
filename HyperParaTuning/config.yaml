@@ -1,7 +1,7 @@
-trainFile: "/home/aih04/LID/trainInput.txt"
-trainDir: "/home/aih04/dataset/Train/"
+trainFile: "/home/aih04/LID/Augmented_trainInput.txt"
+trainDir: "/home/aih04/dataset/Augmented_train/"
 testFile: "/home/aih04/LID/testInput.txt"
-testDir: "/home/aih04/dataset/Test/"
+testDir: "/home/aih04/dataset/Augmented_train/"
 
 batchSize: 64
 valBatchSize: 64
